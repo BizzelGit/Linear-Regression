@@ -1,0 +1,29 @@
+# Load libraries
+import codecademylib3
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Read in the data
+students = pd.read_csv('test_data.csv')
+
+# Write equation for a line
+y = 9.85 * students.hours_studied + 43
+
+# Create the plot here: 
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Zufallsdaten erzeugen
+x = np.random.randn(100)
+y = 2*x + np.random.randn(100)
+
+# Scatter Plot erstellen
+plt.scatter(students.hours_studied, students.score)
+plt.xlabel("hours_studied")
+plt.ylabel("score")
+plt.title("Studentset")
+plt.grid(True)
+
+plt.plot(students.hours_studied, y)
+plt.show()

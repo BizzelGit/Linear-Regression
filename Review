@@ -1,0 +1,119 @@
+# Load libraries
+import codecademylib3
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+
+# Read in the data
+website = pd.read_csv('website.csv')
+
+# Print the first five rows
+print(website.head(5))
+
+# Scatter: age (x) vs time_seconds (y)
+plt.scatter(website.age, website.time_seconds)
+plt.xlabel("Age")
+plt.ylabel("Time on site (seconds)")
+plt.title("Scatter: Age vs Time on Site")
+plt.show()
+plt.clf()
+
+# Lineares Regressionsmodell: time_seconds ~ age
+model = sm.OLS.from_formula('time_seconds ~ age', data=website)
+results = model.fit()
+
+# Regressionskoeffizienten
+print("Koeffizienten:", results.params)
+print(results.summary())  # nützliche Kurzdiagnostik
+
+# Scatter inkl. Regressionslinie (nicht hartkodiert, sondern aus dem Modell)
+x_plot = np.linspace(website.age.min(), website.age.max(), 100)
+y_plot = results.predict(pd.DataFrame({'age': x_plot}))
+plt.scatter(website.age, website.time_seconds)
+plt.plot(x_plot, y_plot, linewidth=2)
+plt.xlabel("Age")
+plt.ylabel("Time on site (seconds)")
+plt.title("Regression: Age -> Time on Site")
+plt.show()
+plt.clf()
+
+
+# -------------------------------
+# Calculate fitted values
+# -------------------------------
+website['fitted'] = results.fittedvalues
+
+# -------------------------------
+# Calculate residuals
+# -------------------------------
+website['residuals'] = results.resid
+
+print(website[['age', 'time_seconds', 'fitted', 'residuals']].head())
+
+# -------------------------------
+# Check normality assumption
+# (Histogram + QQ-Plot)
+# -------------------------------
+plt.hist(website['residuals'], bins=20, edgecolor='black')
+plt.xlabel("Residual")
+plt.ylabel("Frequency")
+plt.title("Histogram der Residuen")
+plt.show()
+plt.clf()
+
+sm.qqplot(website['residuals'], line='45', fit=True)
+plt.title("QQ-Plot der Residuen (Normalität)")
+plt.show()
+plt.clf()
+
+# -------------------------------
+# Check homoscedasticity assumption
+# (Residuals vs Fitted + vs Age)
+# -------------------------------
+plt.scatter(website['fitted'], website['residuals'])
+plt.axhline(0, linestyle='--')
+plt.xlabel("Fitted values")
+plt.ylabel("Residuals")
+plt.title("Residuen vs Fitted (Homoskedastizität)")
+plt.show()
+plt.clf()
+
+plt.scatter(website['age'], website['residuals'])
+plt.axhline(0, linestyle='--')
+plt.xlabel("Age")
+plt.ylabel("Residuals")
+plt.title("Residuen vs Age")
+plt.show()
+plt.clf()
+
+# -------------------------------
+# Predict amount of time on website for 40 year old
+# (Punkt-Schätzer + 95%-KI und PI)
+# -------------------------------
+pred_40 = results.get_prediction(pd.DataFrame({'age': [40]})).summary_frame(alpha=0.05)
+print("Vorhersage für Age=40:")
+print(pred_40)
+# Optional hübsche Ausgabe:
+point_pred = float(pred_40['mean'])
+ci_low, ci_high = float(pred_40['mean_ci_lower']), float(pred_40['mean_ci_upper'])
+pi_low, pi_high = float(pred_40['obs_ci_lower']), float(pred_40['obs_ci_upper'])
+print(f"Punkt-Schätzer: {point_pred:.2f}s | 95%-KI (Mittelwert): [{ci_low:.2f}, {ci_high:.2f}] | 95%-PI (Einzelbeobachtung): [{pi_low:.2f}, {pi_high:.2f}]")
+
+# -------------------------------
+# Fit a linear regression to predict time_seconds based on the browser
+# (Browser als kategoriale Variable)
+# -------------------------------
+# Tipp: Stelle sicher, dass 'browser' in der CSV vorhanden ist.
+model_b = sm.OLS.from_formula('time_seconds ~ C(browser)', data=website)
+results_b = model_b.fit()
+print("Koeffizienten (Browser-Modell):")
+print(results_b.params)
+print(results_b.summary())
+
+# -------------------------------
+# Calculate and print the group means (for comparison)
+# -------------------------------
+group_means = website.groupby('browser')['time_seconds'].mean().sort_values(ascending=False)
+print("Gruppenmittelwerte (Zeit nach Browser):")
+print(group_means)
